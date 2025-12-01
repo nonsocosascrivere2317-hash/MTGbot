@@ -1,18 +1,13 @@
-import requests
-import telebot
-import time
-import json
-import os
-from bs4 import BeautifulSoup
-
 TOKEN = "8516215785:AAFdYKVp7DyXZTeQ8J7d2RpF_P6bpHbStng"
 CHAT_ID = "1589057444"
-
 bot = telebot.TeleBot(TOKEN)
 
 KEYWORDS_FILE = "keywords.json"
 
-# Carica o crea file keywords
+# ----------------------------
+# 🔧  Gestione Keywords
+# ----------------------------
+
 def load_keywords():
     if not os.path.exists(KEYWORDS_FILE):
         with open(KEYWORDS_FILE, "w") as f:
@@ -24,68 +19,118 @@ def save_keywords(data):
     with open(KEYWORDS_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Prende keyword dell’utente
 def get_user_keywords(user_id):
     data = load_keywords()
     return data.get(str(user_id), ["magic the gathering mazzo"])
 
-# Setta keyword via comando
-@bot.message_handler(commands=['setkeywords'])
-def set_keywords(message):
-    user_id = message.chat.id
-    text = message.text.replace("/setkeywords", "").strip()
-
-    if not text:
-        bot.reply_to(message, "❗ Usa il comando così:\n`/setkeywords mazzo commander, mtg deck`", parse_mode="Markdown")
-        return
-
-    keywords = [k.strip() for k in text.split(",")]
-
+def set_user_keywords(user_id, keywords):
     data = load_keywords()
     data[str(user_id)] = keywords
     save_keywords(data)
 
-    bot.reply_to(message, f"✅ Keywords aggiornate a:\n\n- " + "\n- ".join(keywords))
+def add_keyword(user_id, keyword):
+    kw = get_user_keywords(user_id)
+    if keyword not in kw:
+        kw.append(keyword)
+    set_user_keywords(user_id, kw)
 
-# Funzione per controllare vinted
-def check_vinted_for_keywords(user_id):
-    keywords = get_user_keywords(user_id)
-    found_items = []
+def del_keyword(user_id, keyword):
+    kw = get_user_keywords(user_id)
+    if keyword in kw:
+        kw.remove(keyword)
+    set_user_keywords(user_id, kw)
 
-    for keyword in keywords:
-        search_url = "https://www.vinted.it/catalog?search_text=" + keyword.replace(" ", "%20")
 
-        response = requests.get(search_url, headers={"User-Agent": "Mozilla/5.0"})
-        soup = BeautifulSoup(response.text, "html.parser")
+# ----------------------------
+# 📌  Comandi Telegram
+# ----------------------------
 
-        items = soup.find_all("a", class_="feed__item")
-        if not items:
-            continue
+@bot.message_handler(commands=['setkeywords'])
+def set_keywords(message):
+    text = message.text.replace("/setkeywords", "").strip()
+    if not text:
+        bot.reply_to(message, "Usa: `/setkeywords keyword1, keyword2`", parse_mode="Markdown")
+        return
 
-        latest = items[0]
-        url = "https://www.vinted.it" + latest.get("href")
+    keywords = [k.strip() for k in text.split(",")]
+    set_user_keywords(message.chat.id, keywords)
 
-        found_items.append((keyword, latest, url))
+    bot.reply_to(message, "✅ Keywords aggiornate a:\n\n" + "\n".join("- " + k for k in keywords))
 
-    return found_items
+
+@bot.message_handler(commands=['getkeywords'])
+def get_keywords(message):
+    keywords = get_user_keywords(message.chat.id)
+    bot.reply_to(message, "📜 *Keywords attuali:*\n\n" + "\n".join("- " + k for k in keywords), parse_mode="Markdown")
+
+
+@bot.message_handler(commands=['addkeyword'])
+def add_keyword_cmd(message):
+    text = message.text.replace("/addkeyword", "").strip()
+    if not text:
+        bot.reply_to(message, "Usa: `/addkeyword nuova_keyword`", parse_mode="Markdown")
+        return
+
+    add_keyword(message.chat.id, text)
+    bot.reply_to(message, f"➕ Aggiunta keyword: **{text}**", parse_mode="Markdown")
+
+
+@bot.message_handler(commands=['delkeywords'])
+def del_keyword_cmd(message):
+    text = message.text.replace("/delkeywords", "").strip()
+    if not text:
+        bot.reply_to(message, "Usa: `/delkeywords keyword_da_rimuovere`", parse_mode="Markdown")
+        return
+
+    del_keyword(message.chat.id, text)
+    bot.reply_to(message, f"❌ Rimossa keyword: **{text}**", parse_mode="Markdown")
+
+
+@bot.message_handler(commands=['clearkeywords'])
+def clear_keywords(message):
+    set_user_keywords(message.chat.id, [])
+    bot.reply_to(message, "🗑️ Tutte le keyword sono state eliminate.")
+
+
+# ----------------------------
+# 🔍  Controllo Vinted
+# ----------------------------
+
+def search_vinted(keyword):
+    url = "https://www.vinted.it/catalog?search_text=" + keyword.replace(" ", "%20")
+    response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    items = soup.find_all("a", class_="feed__item")
+    if not items:
+        return None
+
+    return items[0]
+
 
 last_seen = {}
 
-# LOOP principale
 def main_loop():
     global last_seen
 
     while True:
         data = load_keywords()
 
-        for user_id in data.keys():
-            items = check_vinted_for_keywords(user_id)
+        for user_id, keywords in data.items():
+            if not keywords:
+                continue
 
-            for keyword, item, url in items:
-                if last_seen.get(url) == True:
+            for keyword in keywords:
+                item = search_vinted(keyword)
+                if not item:
                     continue
 
-                last_seen[url] = True
+                item_url = "https://www.vinted.it" + item.get("href")
+
+                if last_seen.get(item_url):
+                    continue
+
+                last_seen[item_url] = True
 
                 title_el = item.find("h3")
                 title = title_el.text.strip() if title_el else "Senza titolo"
@@ -96,15 +141,18 @@ def main_loop():
                 img_el = item.find("img")
                 img = img_el.get("src") if img_el else None
 
-                caption = f"🆕 Nuovo annuncio trovato!\n\n🔍 Keyword: {keyword}\n📦 {title}\n💶 Prezzo: {price}\n🔗 {url}"
+                caption = f"🆕 Nuovo annuncio trovato!\n\n🔍 Keyword: {keyword}\n📦 {title}\n💶 Prezzo: {price}\n🔗 {item_url}"
 
                 bot.send_photo(int(user_id), img, caption=caption) if img else bot.send_message(int(user_id), caption)
 
         time.sleep(300)
 
-# Avvia bot + loop
+
+# ----------------------------
+# 🚀 Avvio bot
+# ----------------------------
+
 import threading
-loop_thread = threading.Thread(target=main_loop)
-loop_thread.start()
+threading.Thread(target=main_loop).start()
 
 bot.polling(none_stop=True)
