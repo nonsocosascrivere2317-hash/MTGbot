@@ -34,7 +34,6 @@ def set_keywords(message):
     bot.register_next_step_handler(message, add_keyword)
 
 # Aggiunge una keyword
-
 def add_keyword(message):
     kw = message.text.strip().lower()
     data = load_keywords()
