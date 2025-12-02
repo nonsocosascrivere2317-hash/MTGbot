@@ -1,7 +1,7 @@
 {
-    "token": "your_telegram_bot_token",
-    "channel_id": "your_telegram_chat_id",
-    "search_terms": ["ralph lauren", "nike"],
+    "token": "8516215785:AAFdYKVp7DyXZTeQ8J7d2RpF_P6bpHbStng",
+    "channel_id": "1589057444",
+    "search_terms": ["magic", "commander deck"],
     "refresh_delay": 3,
     "max_images_per_post": 4,
     "countries": [".de", ".it", ".fr"]
