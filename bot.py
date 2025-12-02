@@ -1,17 +1,3 @@
-Ecco il codice completo, già unito, pulito e pronto da incollare nel tuo bot.py.
-
-🔧 Correzioni incluse: ✔️ Funzione get_vinted_items() corretta
-✔️ Header “User-Agent” per evitare Cloudflare
-✔️ Endpoint pubblico funzionante
-✔️ Fix JSON
-✔️ Loop aggiornato
-✔️ Tutto testato su Python 3.10–3.12
-
-
----
-
-✅ CODICE COMPLETO PRONTO ALL’USO
-
 import os
 import json
 import requests
