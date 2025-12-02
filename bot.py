@@ -8,6 +8,7 @@ from telebot import types
 
 TOKEN = "8516215785:AAFdYKVp7DyXZTeQ8J7d2RpF_P6bpHbStng"
 bot = telebot.TeleBot(TOKEN)
+OWNER_ID = 1589057444
 
 KEYWORDS_FILE = "keywords.json"
 SEEN_FILE = "seen.json"  # per tenere traccia degli annunci già notificati
