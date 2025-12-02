@@ -22,7 +22,7 @@ class VintedAPI:
         }
 
         if with_auth and self.token:
-            headers['authorization'] = f'Bearer {self.token}'
+            headers[''] = f'Bearer {self.token}'
 
         return headers
 
