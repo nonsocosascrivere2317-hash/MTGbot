@@ -104,6 +104,7 @@ HEADERS = {
 }
 
 def get_vinted_items(keyword):
+     # Parametri da inviare con la richiesta
     params = {
         "search_text": keyword,
         "page": 1,
@@ -111,18 +112,24 @@ def get_vinted_items(keyword):
         "order": "newest_first"
     }
 
+    # Stampa i parametri per vedere cosa stai inviando all'API
+    print("Richiesta a Vinted con i seguenti parametri:", params)
+
+    # Effettua la richiesta GET all'API di Vinted
     r = requests.get(SEARCH_URL, headers=HEADERS, params=params)
-
+    
+    # Controlla se la risposta ha uno status diverso da 200 (successo)
     if r.status_code != 200:
-        print("STATUS:", r.status_code)
-        print("RISPOSTA:", r.text[:200])
+        print(f"Errore! Status code: {r.status_code}")
+        print(f"Risposta: {r.text[:200]}")  # Mostra solo i primi 200 caratteri della risposta
         return None
-
+    
+    # Cerca di fare il parsing della risposta JSON
     try:
         j = r.json()
-        return j.get("items", [])
-    except Exception:
-        print("JSON ERROR:", r.text[:200])
+        return j.get("items", [])  # Ritorna gli articoli trovati
+    except Exception as e:
+        print(f"Errore durante il parsing della risposta JSON: {e}")
         return None
 
 
