@@ -6,7 +6,7 @@ import threading
 import telebot
 from telebot import types
 
-TOKEN = "INSERISCI_IL_TUO_TOKEN"
+TOKEN = "8516215785:AAFdYKVp7DyXZTeQ8J7d2RpF_P6bpHbStng"
 bot = telebot.TeleBot(TOKEN)
 
 KEYWORDS_FILE = "keywords.json"
