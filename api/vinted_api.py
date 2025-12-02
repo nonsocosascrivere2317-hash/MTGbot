@@ -22,7 +22,7 @@ class VintedAPI:
         }
 
         if with_auth and self.token:
-            headers[] = f'Bearer {self.token}'
+            headers['authorization'] = f'Bearer {self.token}'
 
         return headers
 
@@ -36,10 +36,11 @@ class VintedAPI:
             }
 
             response = self.session.get(
-                f'{self.base_url}/api/v2/catalog/items',
-                params=params,
-                headers=self._get_headers(with_auth=True)
+            f'{self.base_url}/api/v2/catalog/items',
+            params=params,
+            headers=self._get_headers(with_auth=False)
             )
+
             response.raise_for_status()
             data = response.json()
 
