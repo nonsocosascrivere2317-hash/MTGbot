@@ -18,19 +18,25 @@ class VintedAPI:
     # -----------------------------
     #  CARICA COOKIE DI TIPO DICT
     # -----------------------------
-    def load_cookies(self):
-        try:
-            with open(self.cookies_file, "r", encoding="utf-8") as f:
-                cookies = json.load(f)
+   def load_cookies(self):
+    try:
+        with open(self.cookies_file, "r", encoding="utf-8") as f:
+            cookies = json.load(f)
 
-            # cookies è un DICT, non una lista → correggiamo
+        # Se è una lista → vecchio formato: [{name:"", value:""}, ...]
+        if isinstance(cookies, list):
+            for cookie in cookies:
+                self.session.cookies.set(cookie["name"], cookie["value"])
+
+        # Se è un dict → nuovo formato: {"cf_clearance":"...", ...}
+        elif isinstance(cookies, dict):
             for name, value in cookies.items():
                 self.session.cookies.set(name, value)
 
-            logger.info("🍪 Cookies caricati correttamente.")
+        logger.info("🍪 Cookies caricati correttamente.")
 
-        except Exception as e:
-            logger.error(f"❌ Errore nel caricamento dei cookie: {e}")
+    except Exception as e:
+        logger.error(f"❌ Errore nel caricamento dei cookie: {e}")
 
     # -----------------------------
     #        HEADERS REALI
